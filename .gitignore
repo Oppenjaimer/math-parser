@@ -1,6 +1,8 @@
 bin/
 build/
 
+.clangd
+
 # Prerequisites
 *.d
 

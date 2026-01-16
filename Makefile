@@ -1,10 +1,11 @@
 SRC_DIR = src
+INC_DIR = include
 BUILD_DIR = build
 BIN_DIR = bin
 TARGET = $(BIN_DIR)/main
 
 CC = gcc
-CFLAGS = -std=c99 -Wall -Wextra -pedantic
+CFLAGS = -std=c99 -Wall -Wextra -pedantic -I$(INC_DIR)
 LDLIBS = -lm
 
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
