@@ -59,19 +59,6 @@ Token lexer_next(Lexer *lexer) {
 
         token.type = TOK_IDENTIFIER;
         token.length = (int)(lexer->current - token.start);
-
-        if (is_keyword(token, "pi"))        token.type = TOK_PI;
-        else if (is_keyword(token, "e"))    token.type = TOK_E;
-        else if (is_keyword(token, "sin"))  token.type = TOK_SIN;
-        else if (is_keyword(token, "cos"))  token.type = TOK_COS;
-        else if (is_keyword(token, "tan"))  token.type = TOK_TAN;
-        else if (is_keyword(token, "asin")) token.type = TOK_ASIN;
-        else if (is_keyword(token, "acos")) token.type = TOK_ACOS;
-        else if (is_keyword(token, "atan")) token.type = TOK_ATAN;
-        else if (is_keyword(token, "ln"))   token.type = TOK_LN;
-        else if (is_keyword(token, "log"))  token.type = TOK_LOG;
-        else if (is_keyword(token, "abs"))  token.type = TOK_ABS;
-
         return token;
     }
 
@@ -85,9 +72,9 @@ Token lexer_next(Lexer *lexer) {
         case '/': token.type = TOK_SLASH;  break;
         case '^': token.type = TOK_CARET;  break;
         case '=': token.type = TOK_EQUAL;  break;
+        case '!': token.type = TOK_BANG;   break;
         case '(': token.type = TOK_LPAREN; break;
         case ')': token.type = TOK_RPAREN; break;
-        case '!': token.type = TOK_FAC;    break;
         default:  token.type = TOK_ERROR;  break;
     }
 

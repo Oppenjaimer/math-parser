@@ -9,14 +9,7 @@ typedef enum {
     // Arithmetic operations
     TOK_PLUS, TOK_MINUS, TOK_STAR,
     TOK_SLASH, TOK_CARET, TOK_EQUAL,
-    TOK_LPAREN, TOK_RPAREN,
-
-    // Built-in functions
-    TOK_PI, TOK_E,
-    TOK_SIN, TOK_COS, TOK_TAN,
-    TOK_ASIN, TOK_ACOS, TOK_ATAN,
-    TOK_LN, TOK_LOG,
-    TOK_ABS, TOK_FAC,
+    TOK_BANG, TOK_LPAREN, TOK_RPAREN,
 
     // Other
     TOK_ERROR,
