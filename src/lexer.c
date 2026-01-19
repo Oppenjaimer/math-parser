@@ -1,18 +1,15 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "lexer.h"
 
-void token_print(Token token) {
-    printf("[Type: %d, Value: %.*s]", token.type, token.length, token.start);
+static void token_print(FILE *stream, Token token) {
+    fprintf(stream, "[Type: %d, Value: %.*s]", token.type, token.length, token.start);
 }
 
-Lexer lexer_new(const char *text) {
-    return (Lexer){
-        .current = text,
-    };
+void lexer_reset(Lexer *lexer, const char *text) {
+    lexer->current = text;
 }
 
 static char peek(const Lexer *lexer) {
@@ -21,10 +18,6 @@ static char peek(const Lexer *lexer) {
 
 static char consume(Lexer *lexer) {
     return *lexer->current++;
-}
-
-static bool is_keyword(Token token, const char *keyword) {
-    return (int)strlen(keyword) == token.length && strncmp(token.start, keyword, token.length) == 0;
 }
 
 Token lexer_next(Lexer *lexer) {
@@ -79,4 +72,23 @@ Token lexer_next(Lexer *lexer) {
     }
 
     return token;
+}
+
+int lexer_print(Lexer *lexer) {
+    Token token = lexer_next(lexer);
+
+    while (token.type != TOK_EOF) {
+        if (token.type == TOK_ERROR) {
+            fprintf(stderr, "Error: ");
+            token_print(stderr, token);
+            fprintf(stderr, "\n");
+            return 1;
+        }
+
+        token_print(stdout, token);
+        printf("\n");
+        token = lexer_next(lexer);
+    }
+
+    return 0;
 }

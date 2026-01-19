@@ -15,21 +15,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    Lexer lexer = lexer_new(text);
-    Token token = lexer_next(&lexer);
-
-    while (token.type != TOK_EOF) {
-        if (token.type == TOK_ERROR) {
-            fprintf(stderr, "Error: ");
-            token_print(token);
-            printf("\n");
-            return 1;
-        }
-
-        token_print(token);
-        printf("\n");
-        token = lexer_next(&lexer);
-    }
+    Lexer lexer;
+    lexer_reset(&lexer, text);
+    lexer_print(&lexer);
 
     return 0;
 }

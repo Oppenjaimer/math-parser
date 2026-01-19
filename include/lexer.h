@@ -22,13 +22,12 @@ typedef struct {
     int length;
 } Token;
 
-void token_print(Token token);
-
 typedef struct {
     const char *current;
 } Lexer;
 
-Lexer lexer_new(const char *text);
+void lexer_reset(Lexer *lexer, const char *text);
 Token lexer_next(Lexer *lexer);
+int lexer_print(Lexer *lexer);
 
 #endif
