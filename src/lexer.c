@@ -8,16 +8,16 @@ static void token_print(FILE *stream, Token token) {
     fprintf(stream, "[Type: %d, Value: %.*s]", token.type, token.length, token.start);
 }
 
-void lexer_reset(Lexer *lexer, const char *text) {
-    lexer->current = text;
-}
-
 static char peek(const Lexer *lexer) {
     return *lexer->current;
 }
 
 static char consume(Lexer *lexer) {
     return *lexer->current++;
+}
+
+void lexer_reset(Lexer *lexer, const char *text) {
+    lexer->current = text;
 }
 
 Token lexer_next(Lexer *lexer) {
@@ -28,7 +28,7 @@ Token lexer_next(Lexer *lexer) {
     token.start = lexer->current;
 
     if (c == '\0') {
-        consume(lexer);
+        // Do not consume, return EOF indefinitely
         token.type = TOK_EOF;
         token.length = 0;
         return token;
