@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lexer.h"
+// #include "lexer.h"
+#include "parser.h"
 
 int main(int argc, char **argv) {
     if (argc != 2) {
@@ -15,9 +16,22 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    Lexer lexer;
-    lexer_reset(&lexer, text);
-    lexer_print(&lexer);
+    // Lexer lexer;
+    // lexer_reset(&lexer, text);
+    // lexer_print(&lexer);
+
+    Parser parser = parser_init();
+
+    Node *root = parser_parse(&parser, text);
+    if (root == NULL) {
+        fprintf(stderr, "Parsing error\n");
+        return 1;
+    }
+
+    node_print(root);
+    printf("\n");
+
+    parser_free(&parser);
 
     return 0;
 }
