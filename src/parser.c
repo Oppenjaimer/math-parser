@@ -19,6 +19,18 @@ static Node *make_node(Parser *parser, NodeType type) {
 static Node *expression(Parser *parser, BindingPower right_bp); // Forward declaration
 static ParseRule *get_rule(Token token); // Forward declaration
 
+static Token peek(Parser *parser) {
+    return parser->current;
+}
+
+static Token consume(Parser *parser) {
+    Token current = parser->current;
+    parser->previous = current;
+    parser->current = lexer_next(&parser->lexer);
+
+    return current;
+}
+
 static Node *number(Parser *parser, Node *left) {
     (void)left;
     Token token = parser->previous;
@@ -85,6 +97,16 @@ static Node *binary(Parser *parser, Node *left) {
     return node;
 }
 
+static Node *grouping(Parser *parser, Node *left) {
+    (void)left;
+    Node *node = expression(parser, BP_NONE);
+
+    if (peek(parser).type != TOK_RPAREN) return NULL;
+    consume(parser);
+
+    return node;
+}
+
 ParseRule rules[] = {
     [TOK_NUMBER]     = {number,     NULL,   BP_NONE},
     [TOK_IDENTIFIER] = {identifier, NULL,   BP_NONE},
@@ -95,8 +117,8 @@ ParseRule rules[] = {
     [TOK_CARET]      = {NULL,       binary, BP_POWER},
     [TOK_EQUAL]      = {NULL,       NULL,   BP_NONE}, // TODO
     [TOK_BANG]       = {NULL,       NULL,   BP_NONE}, // TODO
-    [TOK_LPAREN]     = {NULL,       NULL,   BP_NONE}, // TODO
-    [TOK_RPAREN]     = {NULL,       NULL,   BP_NONE}, // TODO
+    [TOK_LPAREN]     = {grouping,   NULL,   BP_NONE},
+    [TOK_RPAREN]     = {NULL,       NULL,   BP_NONE},
     [TOK_ERROR]      = {NULL,       NULL,   BP_NONE}, // TODO
     [TOK_EOF]        = {NULL,       NULL,   BP_NONE}, // TODO
 };
@@ -106,18 +128,6 @@ static ParseRule *get_rule(Token token) {
         return NULL;
 
     return &rules[token.type];
-}
-
-static Token peek(Parser *parser) {
-    return parser->current;
-}
-
-static Token consume(Parser *parser) {
-    Token current = parser->current;
-    parser->previous = current;
-    parser->current = lexer_next(&parser->lexer);
-
-    return current;
 }
 
 static Node *expression(Parser *parser, BindingPower right_bp) {
