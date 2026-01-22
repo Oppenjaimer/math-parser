@@ -16,7 +16,11 @@ static Node *make_node(Parser *parser, NodeType type) {
     return node;
 }
 
-static Node *number(Parser *parser) {
+static Node *expression(Parser *parser, BindingPower right_bp); // Forward declaration
+static ParseRule *get_rule(Token token); // Forward declaration
+
+static Node *number(Parser *parser, Node *left) {
+    (void)left;
     Token token = parser->previous;
 
     char buffer[NUMBER_BUFSIZE];
@@ -29,7 +33,8 @@ static Node *number(Parser *parser) {
     return node;
 }
 
-static Node *identifier(Parser *parser) {
+static Node *identifier(Parser *parser, Node *left) {
+    (void)left;
     Token token = parser->previous;
 
     Node *node = make_node(parser, NODE_IDENTIFIER);
@@ -46,12 +51,38 @@ static Node *identifier(Parser *parser) {
     return node;
 }
 
-static Node *unary(Parser *parser) {
-    return NULL;
+static Node *unary(Parser *parser, Node *left) {
+    (void)left;
+    Token token = parser->previous;
+
+    Node *node = make_node(parser, NODE_UNARY);
+    if (node == NULL) return NULL;
+
+    node->as.unary.op = token;
+    node->as.unary.right = expression(parser, BP_PREFIX);
+
+    return node;
 }
 
-static Node *binary(Parser *parser) {
-    return NULL;
+static Node *binary(Parser *parser, Node *left) {
+    Token token = parser->previous;
+
+    Node *node = make_node(parser, NODE_BINARY);
+    if (node == NULL) return NULL;
+
+    node->as.binary.op = token;
+    node->as.binary.left = left;
+
+    BindingPower next_bp = get_rule(token)->left_bp;
+    if (token.type == TOK_CARET) {
+        // Right-associative
+        node->as.binary.right = expression(parser, (BindingPower)((int)next_bp - 1));
+    } else {
+        // Left-associative
+        node->as.binary.right = expression(parser, next_bp);
+    }
+
+    return node;
 }
 
 ParseRule rules[] = {
@@ -89,32 +120,50 @@ static Token consume(Parser *parser) {
     return current;
 }
 
-static Node *expression(Parser *parser) {
+static Node *expression(Parser *parser, BindingPower right_bp) {
     Token first_token = consume(parser);
-    ParseRule *rule = get_rule(first_token);
-    if (rule == NULL || rule->prefix == NULL) return NULL;
+    ParseRule *first_rule = get_rule(first_token);
+    if (first_rule == NULL || first_rule->prefix == NULL) return NULL;
 
-    Node *left_node = rule->prefix(parser);
+    Node *left = first_rule->prefix(parser, NULL);
 
-    // TODO: don't return left node, but compute right node
+    while ((int)right_bp < (int)get_rule(peek(parser))->left_bp) {
+        Token token = consume(parser);
+        ParseRule *rule = get_rule(token);
+        if (rule == NULL || rule->infix == NULL) return left;
 
-    return left_node;
+        left = rule->infix(parser, left);
+    }
+
+    return left;
 }
 
 void node_print(Node *node) {
     switch (node->type) {
         case NODE_NUMBER:
-            printf("Node(%lf)", node->as.number);
+            printf("%lf", node->as.number);
             break;
 
         case NODE_IDENTIFIER:
-            printf("Node(%.*s)", node->as.identifier.length, node->as.identifier.name);
+            printf("%.*s", node->as.identifier.length, node->as.identifier.name);
             break;
 
-        // TODO: recursively print all nodes
+        case NODE_UNARY:
+            printf("(%.*s ", node->as.unary.op.length, node->as.unary.op.start);
+            node_print(node->as.unary.right);
+            printf(")");
+            break;
 
-        default:
-            printf("Node()");
+        case NODE_BINARY:
+            printf("(%.*s ", node->as.binary.op.length, node->as.binary.op.start);
+            node_print(node->as.binary.left);
+            printf(" ");
+            node_print(node->as.binary.right);
+            printf(")");
+            break;
+
+        case NODE_GROUPING:
+            printf("Node(grouping)");
             break;
     }
 }
@@ -140,5 +189,5 @@ Node *parser_parse(Parser *parser, const char *expr) {
     if (parser->current.type == TOK_EOF || parser->current.type == TOK_ERROR)
         return NULL;
 
-    return expression(parser);
+    return expression(parser, BP_NONE);
 }

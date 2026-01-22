@@ -20,12 +20,12 @@ typedef struct {
 } IdentifierData;
 
 typedef struct {
-    TokenType op;
+    Token op;
     struct Node *right;
 } UnaryData;
 
 typedef struct {
-    TokenType op;
+    Token op;
     struct Node *left;
     struct Node *right;
 } BinaryData;
@@ -58,7 +58,7 @@ typedef enum {
     BP_POSTFIX,
 } BindingPower;
 
-typedef Node *(*ParseFn)(Parser *parser);
+typedef Node *(*ParseFn)(Parser *parser, struct Node *left);
 
 typedef struct {
     ParseFn prefix;
