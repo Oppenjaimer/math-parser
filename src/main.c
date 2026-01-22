@@ -1,37 +1,54 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-// #include "lexer.h"
 #include "parser.h"
 
+#define LINE_SIZE 1024
+
+void parse(Parser *parser, const char *expr) {
+    Node *root = parser_parse(parser, expr);
+    if (root != NULL) {
+        node_print(root);
+        printf("\n");
+    }
+}
+
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s EXPRESSION\n", argv[0]);
-        return 1;
-    }
-
-    const char *text = argv[1];
-    if (text == NULL || strlen(text) == 0) {
-        fprintf(stderr, "Invalid expression\n");
-        return 1;
-    }
-
-    // Lexer lexer;
-    // lexer_reset(&lexer, text);
-    // lexer_print(&lexer);
-
     Parser parser = parser_init();
 
-    Node *root = parser_parse(&parser, text);
-    if (root == NULL) {
-        fprintf(stderr, "Parsing error\n");
-        return 1;
+    if (argc > 2) {
+        fprintf(stderr, "Usage: %s [EXPRESSION]\n", argv[0]);
+        return EXIT_FAILURE;
     }
 
-    node_print(root);
-    printf("\n");
+    if (argc == 2) {
+        if (strlen(argv[1]) == 0) return EXIT_SUCCESS;
+
+        parse(&parser, argv[1]);
+        parser_free(&parser);
+
+        return EXIT_SUCCESS;
+    }
+
+    char line[LINE_SIZE];
+    printf("Initializing REPL (type '.exit' to quit)\n");
+
+    while (1) {
+        printf("> ");
+        if (!fgets(line, sizeof(line), stdin)) break;
+
+        line[strcspn(line, "\n")] = 0;
+        if (strcmp(line, ".exit") == 0) {
+            exit(EXIT_SUCCESS);
+        }
+
+        if (strlen(line) == 0) continue;
+
+        parse(&parser, line);
+        arena_clear(parser.arena);
+    }
 
     parser_free(&parser);
-
-    return 0;
+    return EXIT_SUCCESS;
 }

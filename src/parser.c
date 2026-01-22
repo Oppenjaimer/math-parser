@@ -10,7 +10,10 @@
 
 static Node *make_node(Parser *parser, NodeType type) {
     Node *node = arena_alloc(parser->arena, sizeof(Node));
-    if (node == NULL) return NULL;
+    if (node == NULL) {
+        fprintf(stderr, "Error: Unable to allocate node\n");
+        return NULL;
+    }
 
     node->type = type;
     return node;
@@ -73,6 +76,11 @@ static Node *unary(Parser *parser, Node *left) {
     node->as.unary.op = token;
     node->as.unary.right = expression(parser, BP_PREFIX);
 
+    if (node->as.unary.right == NULL) {
+        fprintf(stderr, "Error: Expected expression after operator '%.*s'\n", token.length, token.start);
+        return NULL;
+    }
+
     return node;
 }
 
@@ -94,6 +102,11 @@ static Node *binary(Parser *parser, Node *left) {
         node->as.binary.right = expression(parser, next_bp);
     }
 
+    if (node->as.binary.right == NULL) {
+        fprintf(stderr, "Error: Expected expression after operator '%.*s'\n", token.length, token.start);
+        return NULL;
+    }
+
     return node;
 }
 
@@ -101,9 +114,12 @@ static Node *grouping(Parser *parser, Node *left) {
     (void)left;
     Node *node = expression(parser, BP_NONE);
 
-    if (peek(parser).type != TOK_RPAREN) return NULL;
-    consume(parser);
+    if (peek(parser).type != TOK_RPAREN) {
+        fprintf(stderr, "Error: Expected token ')'\n");
+        return NULL;
+    }
 
+    consume(parser);
     return node;
 }
 
@@ -119,13 +135,15 @@ ParseRule rules[] = {
     [TOK_BANG]       = {NULL,       NULL,   BP_NONE}, // TODO
     [TOK_LPAREN]     = {grouping,   NULL,   BP_NONE},
     [TOK_RPAREN]     = {NULL,       NULL,   BP_NONE},
-    [TOK_ERROR]      = {NULL,       NULL,   BP_NONE}, // TODO
-    [TOK_EOF]        = {NULL,       NULL,   BP_NONE}, // TODO
+    [TOK_ERROR]      = {NULL,       NULL,   BP_NONE},
+    [TOK_EOF]        = {NULL,       NULL,   BP_NONE},
 };
 
 static ParseRule *get_rule(Token token) {
-    if (token.type < 0 || token.type >= sizeof(rules) / sizeof(ParseRule))
+    if (token.type < 0 || token.type >= sizeof(rules) / sizeof(ParseRule)) {
+        fprintf(stderr, "Error: No parse rule for token '%.*s'\n", token.length, token.start);
         return NULL;
+    }
 
     return &rules[token.type];
 }
@@ -133,9 +151,15 @@ static ParseRule *get_rule(Token token) {
 static Node *expression(Parser *parser, BindingPower right_bp) {
     Token first_token = consume(parser);
     ParseRule *first_rule = get_rule(first_token);
-    if (first_rule == NULL || first_rule->prefix == NULL) return NULL;
+    if (first_rule == NULL || first_rule->prefix == NULL) {
+        if (first_token.length > 0) // Don't report unexpected EOF
+            fprintf(stderr, "Error: Unexpected token '%.*s'\n", first_token.length, first_token.start);
+
+        return NULL;
+    };
 
     Node *left = first_rule->prefix(parser, NULL);
+    if (left == NULL) return NULL;
 
     while ((int)right_bp < (int)get_rule(peek(parser))->left_bp) {
         Token token = consume(parser);
@@ -143,6 +167,7 @@ static Node *expression(Parser *parser, BindingPower right_bp) {
         if (rule == NULL || rule->infix == NULL) return left;
 
         left = rule->infix(parser, left);
+        if (left == NULL) return NULL;
     }
 
     return left;
@@ -184,6 +209,11 @@ Parser parser_init() {
     parser.lexer = lexer;
     parser.arena = arena_init(ARENA_CAPACITY);
 
+    if (parser.arena == NULL) {
+        fprintf(stderr, "Error: Unable to initialize arena\n");
+        exit(EXIT_FAILURE);
+    }
+
     return parser;
 }
 
@@ -194,10 +224,12 @@ void parser_free(Parser *parser) {
 Node *parser_parse(Parser *parser, const char *expr) {
     lexer_reset(&parser->lexer, expr);
     parser->current = lexer_next(&parser->lexer);
-    parser->previous = (Token){ .type = TOK_EOF, .start = 0, .length = 0 }; // Placeholder
 
-    if (parser->current.type == TOK_EOF || parser->current.type == TOK_ERROR)
+    Node *root = expression(parser, BP_NONE);
+    if (root != NULL && parser->current.type != TOK_EOF) {
+        fprintf(stderr, "Error: Unexpected trailing tokens\n");
         return NULL;
+    }
 
-    return expression(parser, BP_NONE);
+    return root;
 }
