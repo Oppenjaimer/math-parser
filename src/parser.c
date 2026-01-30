@@ -110,6 +110,18 @@ static Node *binary(Parser *parser, Node *left) {
     return node;
 }
 
+static Node *postfix(Parser *parser, Node *left) {
+    Token token = parser->previous;
+
+    Node *node = make_node(parser, NODE_UNARY);
+    if (node == NULL) return NULL;
+
+    node->as.unary.op = token;
+    node->as.unary.right = left;
+
+    return node;
+}
+
 static Node *grouping(Parser *parser, Node *left) {
     (void)left;
     Node *node = expression(parser, BP_NONE);
@@ -124,19 +136,19 @@ static Node *grouping(Parser *parser, Node *left) {
 }
 
 ParseRule rules[] = {
-    [TOK_NUMBER]     = {number,     NULL,   BP_NONE},
-    [TOK_IDENTIFIER] = {identifier, NULL,   BP_NONE},
-    [TOK_PLUS]       = {unary,      binary, BP_TERM},
-    [TOK_MINUS]      = {unary,      binary, BP_TERM},
-    [TOK_STAR]       = {NULL,       binary, BP_FACTOR},
-    [TOK_SLASH]      = {NULL,       binary, BP_FACTOR},
-    [TOK_CARET]      = {NULL,       binary, BP_POWER},
-    [TOK_EQUAL]      = {NULL,       NULL,   BP_NONE}, // TODO
-    [TOK_BANG]       = {NULL,       NULL,   BP_NONE}, // TODO
-    [TOK_LPAREN]     = {grouping,   NULL,   BP_NONE},
-    [TOK_RPAREN]     = {NULL,       NULL,   BP_NONE},
-    [TOK_ERROR]      = {NULL,       NULL,   BP_NONE},
-    [TOK_EOF]        = {NULL,       NULL,   BP_NONE},
+    [TOK_NUMBER]     = {number,     NULL,    BP_NONE},
+    [TOK_IDENTIFIER] = {identifier, NULL,    BP_NONE},
+    [TOK_PLUS]       = {unary,      binary,  BP_TERM},
+    [TOK_MINUS]      = {unary,      binary,  BP_TERM},
+    [TOK_STAR]       = {NULL,       binary,  BP_FACTOR},
+    [TOK_SLASH]      = {NULL,       binary,  BP_FACTOR},
+    [TOK_CARET]      = {NULL,       binary,  BP_POWER},
+    [TOK_EQUAL]      = {NULL,       NULL,    BP_NONE}, // TODO
+    [TOK_BANG]       = {NULL,       postfix, BP_POSTFIX},
+    [TOK_LPAREN]     = {grouping,   NULL,    BP_NONE},
+    [TOK_RPAREN]     = {NULL,       NULL,    BP_NONE},
+    [TOK_ERROR]      = {NULL,       NULL,    BP_NONE},
+    [TOK_EOF]        = {NULL,       NULL,    BP_NONE},
 };
 
 static ParseRule *get_rule(Token token) {
