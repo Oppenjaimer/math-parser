@@ -56,6 +56,12 @@ void symbol_table_free(SymbolTable *symbol_table) {
     arena_free(symbol_table->arena);
 }
 
+void symbol_table_print(SymbolTable *symbol_table) {
+    for (int i = 0; i < symbol_table->count; i++) {
+        printf("%.*s = %lf\n", symbol_table->symbols[i].length, symbol_table->symbols[i].name, symbol_table->symbols[i].value);
+    }
+}
+
 double env_evaluate(Node *node, SymbolTable *symbol_table) {
     switch (node->type) {
         case NODE_NUMBER:
@@ -110,23 +116,23 @@ double env_evaluate(Node *node, SymbolTable *symbol_table) {
             const char *name = node->as.call.function->as.identifier.name;
             int length = node->as.call.function->as.identifier.length;
 
-            if (strncmp(name, "sin", length) == 0)  return sin(argument);
-            if (strncmp(name, "cos", length) == 0)  return cos(argument);
-            if (strncmp(name, "tan", length) == 0)  return tan(argument);
+            if (strncmp(name, "sin", length) == 0)     return sin(argument);
+            if (strncmp(name, "cos", length) == 0)     return cos(argument);
+            if (strncmp(name, "tan", length) == 0)     return tan(argument);
             if (strncmp(name, "arcsin", length) == 0)  return asin(argument);
             if (strncmp(name, "arccos", length) == 0)  return acos(argument);
             if (strncmp(name, "arctan", length) == 0)  return atan(argument);
-            if (strncmp(name, "sinh", length) == 0)  return sinh(argument);
-            if (strncmp(name, "cosh", length) == 0)  return cosh(argument);
-            if (strncmp(name, "tanh", length) == 0)  return tanh(argument);
-            if (strncmp(name, "arcsinh", length) == 0)  return asinh(argument);
-            if (strncmp(name, "arccosh", length) == 0)  return acosh(argument);
-            if (strncmp(name, "arctanh", length) == 0)  return atanh(argument);
-            if (strncmp(name, "abs", length) == 0)  return fabs(argument);
-            if (strncmp(name, "sqrt", length) == 0)  return sqrt(argument);
-            if (strncmp(name, "ln", length) == 0)  return log(argument);
-            if (strncmp(name, "log", length) == 0)  return log10(argument);
-            if (strncmp(name, "exp", length) == 0)  return exp(argument);
+            if (strncmp(name, "sinh", length) == 0)    return sinh(argument);
+            if (strncmp(name, "cosh", length) == 0)    return cosh(argument);
+            if (strncmp(name, "tanh", length) == 0)    return tanh(argument);
+            if (strncmp(name, "arcsinh", length) == 0) return asinh(argument);
+            if (strncmp(name, "arccosh", length) == 0) return acosh(argument);
+            if (strncmp(name, "arctanh", length) == 0) return atanh(argument);
+            if (strncmp(name, "abs", length) == 0)     return fabs(argument);
+            if (strncmp(name, "sqrt", length) == 0)    return sqrt(argument);
+            if (strncmp(name, "ln", length) == 0)      return log(argument);
+            if (strncmp(name, "log", length) == 0)     return log10(argument);
+            if (strncmp(name, "exp", length) == 0)     return exp(argument);
 
             return 0.0;
         }

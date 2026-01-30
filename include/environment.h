@@ -20,6 +20,7 @@ typedef struct {
 
 SymbolTable symbol_table_init();
 void symbol_table_free(SymbolTable *symbol_table);
+void symbol_table_print(SymbolTable *symbol_table);
 double env_evaluate(Node *node, SymbolTable *symbol_table);
 
 #endif
