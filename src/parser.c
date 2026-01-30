@@ -6,7 +6,7 @@
 
 #include "parser.h"
 
-#define ARENA_CAPACITY (1024 * 2)
+#define PARSER_ARENA_CAPACITY (1024 * 2)
 #define NUMBER_BUFSIZE 100
 
 static Node *make_node(Parser *parser, NodeType type) {
@@ -317,10 +317,10 @@ Parser parser_init() {
     Lexer lexer = {0};
     Parser parser;
     parser.lexer = lexer;
-    parser.arena = arena_init(ARENA_CAPACITY);
+    parser.arena = arena_init(PARSER_ARENA_CAPACITY);
 
     if (parser.arena == NULL) {
-        fprintf(stderr, "Error: Unable to initialize arena\n");
+        fprintf(stderr, "Error: Unable to initialize parser arena\n");
         exit(EXIT_FAILURE);
     }
 
