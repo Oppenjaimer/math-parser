@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "parser.h"
 
@@ -34,6 +35,20 @@ static Token consume(Parser *parser) {
     return current;
 }
 
+static bool is_reserved(Node *node) {
+    const char *reserved[] = {
+        "pi", "e", "sin", "cos", "tan", "arcsin", "arccos", "arctan", "abs", "sqrt", "ln", "log", "exp"
+    };
+
+    for (size_t i = 0; i < sizeof(reserved) / sizeof(reserved[0]); i++) {
+        if (strlen(reserved[i]) == (size_t)node->as.identifier.length &&
+            strncmp(reserved[i], node->as.identifier.name, node->as.identifier.length) == 0)
+            return true;
+    }
+
+    return false;
+}
+
 static Node *number(Parser *parser, Node *left) {
     (void)left;
     Token token = parser->previous;
@@ -54,9 +69,6 @@ static Node *identifier(Parser *parser, Node *left) {
 
     Node *node = make_node(parser, NODE_IDENTIFIER);
     if (node == NULL) return NULL;
-
-    // TODO: check if math function
-    // TODO: check if assigned to variable
 
     node->as.identifier = (IdentifierData){
         .name = token.start,
@@ -128,7 +140,12 @@ static Node *assignment(Parser *parser, Node *left) {
         return NULL;
     }
 
-    // TODO: check that identifier is not a reserved keyword (built-in)
+    if (is_reserved(left)) {
+        fprintf(stderr, "Error: Cannot assign to reserved keyword '%.*s'\n",
+                left->as.identifier.length, left->as.identifier.name);
+        return NULL;
+    }
+
     Token token = parser->previous;
 
     Node *node = make_node(parser, NODE_BINARY);
