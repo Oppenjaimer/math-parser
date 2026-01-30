@@ -35,14 +35,30 @@ static Token consume(Parser *parser) {
     return current;
 }
 
-static bool is_reserved(Node *node) {
-    const char *reserved[] = {
-        "pi", "e", "sin", "cos", "tan", "arcsin", "arccos", "arctan", "abs", "sqrt", "ln", "log", "exp"
+static bool is_constant(Node *node) {
+    const char *constants[] = {
+        "e", "pi"
     };
 
-    for (size_t i = 0; i < sizeof(reserved) / sizeof(reserved[0]); i++) {
-        if (strlen(reserved[i]) == (size_t)node->as.identifier.length &&
-            strncmp(reserved[i], node->as.identifier.name, node->as.identifier.length) == 0)
+    for (size_t i = 0; i < sizeof(constants) / sizeof(constants[0]); i++) {
+        if (strlen(constants[i]) == (size_t)node->as.identifier.length &&
+            strncmp(constants[i], node->as.identifier.name, node->as.identifier.length) == 0)
+            return true;
+    }
+
+    return false;
+}
+
+static bool is_function(Node *node) {
+    const char *functions[] = {
+        "sin", "cos", "tan", "arcsin", "arccos", "arctan",
+        "sinh", "cosh", "tanh", "arcsinh", "arccosh", "arctanh",
+        "abs", "sqrt", "ln", "log", "exp"
+    };
+
+    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {
+        if (strlen(functions[i]) == (size_t)node->as.identifier.length &&
+            strncmp(functions[i], node->as.identifier.name, node->as.identifier.length) == 0)
             return true;
     }
 
@@ -74,6 +90,11 @@ static Node *identifier(Parser *parser, Node *left) {
         .name = token.start,
         .length = token.length,
     };
+
+    if (is_function(node) && peek(parser).type != TOK_LPAREN) {
+        fprintf(stderr, "Error: Expected argument after call to '%.*s'\n", token.length, token.start);
+        return NULL;
+    }
 
     return node;
 }
@@ -140,7 +161,7 @@ static Node *assignment(Parser *parser, Node *left) {
         return NULL;
     }
 
-    if (is_reserved(left)) {
+    if (is_function(left) || is_constant(left)) {
         fprintf(stderr, "Error: Cannot assign to reserved keyword '%.*s'\n",
                 left->as.identifier.length, left->as.identifier.name);
         return NULL;
@@ -165,6 +186,12 @@ static Node *assignment(Parser *parser, Node *left) {
 
 static Node *grouping(Parser *parser, Node *left) {
     (void)left;
+    if (peek(parser).type == TOK_RPAREN) {
+        fprintf(stderr, "Error: Unexpected empty parentheses '()'\n");
+        consume(parser);
+        return NULL;
+    }
+
     Node *node = expression(parser, BP_NONE);
 
     if (peek(parser).type != TOK_RPAREN) {
@@ -173,6 +200,32 @@ static Node *grouping(Parser *parser, Node *left) {
     }
 
     consume(parser);
+    return node;
+}
+
+static Node *call(Parser *parser, Node *left) {
+    if (left->type != NODE_IDENTIFIER) {
+        fprintf(stderr, "Error: Invalid call target\n");
+        return NULL;
+    }
+
+    if (!is_function(left)) {
+        fprintf(stderr, "Error: Non-function '%.*s' called\n",
+                left->as.identifier.length, left->as.identifier.name);
+        return NULL;
+    }
+
+    Node *node = make_node(parser, NODE_CALL);
+    if (node == NULL) return NULL;
+
+    node->as.call.function = left;
+    node->as.call.argument = grouping(parser, left);
+
+    if (node->as.call.argument == NULL) {
+        fprintf(stderr, "Error: Expected argument in function call\n");
+        return NULL;
+    }
+
     return node;
 }
 
@@ -186,7 +239,7 @@ ParseRule rules[] = {
     [TOK_CARET]      = {NULL,       binary,     BP_POWER},
     [TOK_EQUAL]      = {NULL,       assignment, BP_ASSIGNMENT},
     [TOK_BANG]       = {NULL,       postfix,    BP_POSTFIX},
-    [TOK_LPAREN]     = {grouping,   NULL,       BP_NONE},
+    [TOK_LPAREN]     = {grouping,   call,       BP_CALL},
     [TOK_RPAREN]     = {NULL,       NULL,       BP_NONE},
     [TOK_ERROR]      = {NULL,       NULL,       BP_NONE},
     [TOK_EOF]        = {NULL,       NULL,       BP_NONE},
@@ -250,8 +303,12 @@ void node_print(Node *node) {
             printf(")");
             break;
 
-        case NODE_GROUPING:
-            printf("Node(grouping)");
+        case NODE_CALL:
+            printf("(");
+            node_print(node->as.call.function);
+            printf(" ");
+            node_print(node->as.call.argument);
+            printf(")");
             break;
     }
 }

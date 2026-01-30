@@ -9,7 +9,7 @@ typedef enum {
     NODE_IDENTIFIER,
     NODE_UNARY,
     NODE_BINARY,
-    NODE_GROUPING,
+    NODE_CALL,
 } NodeType;
 
 struct Node; // Forward declaration
@@ -30,6 +30,11 @@ typedef struct {
     struct Node *right;
 } BinaryData;
 
+typedef struct {
+    struct Node *function;
+    struct Node *argument;
+} CallData;
+
 typedef struct Node {
     NodeType type;
     union {
@@ -37,6 +42,7 @@ typedef struct Node {
         IdentifierData identifier;
         UnaryData unary;
         BinaryData binary;
+        CallData call;
         struct Node *group;
     } as;
 } Node;
@@ -56,6 +62,7 @@ typedef enum {
     BP_POWER,
     BP_PREFIX,
     BP_POSTFIX,
+    BP_CALL,
 } BindingPower;
 
 typedef Node *(*ParseFn)(Parser *parser, struct Node *left);
