@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,46 +7,49 @@
 
 #define LINE_SIZE 1024
 
-void parse(Parser *parser, const char *expr) {
+void parse(Parser *parser, const char *expr, bool show_tree) {
     Node *root = parser_parse(parser, expr);
-    if (root != NULL) {
+    if (root != NULL && show_tree) {
         node_print(root);
         printf("\n");
     }
 }
 
 int main(int argc, char **argv) {
-    Parser parser = parser_init();
-
     if (argc > 2) {
         fprintf(stderr, "Usage: %s [EXPRESSION]\n", argv[0]);
         return EXIT_FAILURE;
     }
 
+    Parser parser = parser_init();
+
     if (argc == 2) {
         if (strlen(argv[1]) == 0) return EXIT_SUCCESS;
 
-        parse(&parser, argv[1]);
+        parse(&parser, argv[1], false);
         parser_free(&parser);
 
         return EXIT_SUCCESS;
     }
 
     char line[LINE_SIZE];
-    printf("Initializing REPL (type '.exit' to quit)\n");
+    bool show_tree = false;
+    printf("Initializing REPL (type '.help' to quit, '.tree' to toggle AST printing)\n");
 
     while (1) {
         printf("> ");
         if (!fgets(line, sizeof(line), stdin)) break;
 
         line[strcspn(line, "\n")] = 0;
-        if (strcmp(line, ".exit") == 0) {
-            exit(EXIT_SUCCESS);
+        if (strlen(line) == 0) continue;
+        if (strcmp(line, ".exit") == 0) break;
+        if (strcmp(line, ".tree") == 0) {
+            show_tree = !show_tree;
+            printf("AST printing: %s\n", show_tree ? "ON" : "OFF");
+            continue;
         }
 
-        if (strlen(line) == 0) continue;
-
-        parse(&parser, line);
+        parse(&parser, line, show_tree);
         arena_clear(parser.arena);
     }
 
