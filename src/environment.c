@@ -7,7 +7,27 @@
 
 #define SYMBOL_ARENA_CAPACITY (1024 * 2)
 
-static Symbol *get_symbol(SymbolTable *table, const char *name, int length) {
+SymbolTable symbol_table_init() {
+    SymbolTable table;
+    table.count = 0;
+    table.arena = arena_init(SYMBOL_ARENA_CAPACITY);
+
+    if (table.arena == NULL) {
+        fprintf(stderr, "Error: Unable to initialize symbol arena\n");
+        exit(EXIT_FAILURE);
+    }
+
+    symbol_table_set(&table, "e", 1, 2.7182818284590452354);
+    symbol_table_set(&table, "pi", 2, 3.14159265358979323846);
+
+    return table;
+}
+
+void symbol_table_free(SymbolTable *symbol_table) {
+    arena_free(symbol_table->arena);
+}
+
+Symbol *symbol_table_get(SymbolTable *table, const char *name, int length) {
     for (int i = 0; i < table->count; i++) {
         if (table->symbols[i].length == length && strncmp(table->symbols[i].name, name, length) == 0)
             return &table->symbols[i];
@@ -16,8 +36,8 @@ static Symbol *get_symbol(SymbolTable *table, const char *name, int length) {
     return NULL;
 }
 
-static void set_symbol(SymbolTable *table, const char *name, int length, double value) {
-    Symbol *existing = get_symbol(table, name, length);
+void symbol_table_set(SymbolTable *table, const char *name, int length, double value) {
+    Symbol *existing = symbol_table_get(table, name, length);
     if (existing) {
         existing->value = value;
         return;
@@ -36,26 +56,6 @@ static void set_symbol(SymbolTable *table, const char *name, int length, double 
     table->symbols[table->count++] = (Symbol){persistent_name, length, value};
 }
 
-SymbolTable symbol_table_init() {
-    SymbolTable table;
-    table.count = 0;
-    table.arena = arena_init(SYMBOL_ARENA_CAPACITY);
-
-    if (table.arena == NULL) {
-        fprintf(stderr, "Error: Unable to initialize symbol arena\n");
-        exit(EXIT_FAILURE);
-    }
-
-    set_symbol(&table, "e", 1, 2.7182818284590452354);
-    set_symbol(&table, "pi", 2, 3.14159265358979323846);
-
-    return table;
-}
-
-void symbol_table_free(SymbolTable *symbol_table) {
-    arena_free(symbol_table->arena);
-}
-
 void symbol_table_print(SymbolTable *symbol_table) {
     for (int i = 0; i < symbol_table->count; i++) {
         printf("%.*s = %lf\n", symbol_table->symbols[i].length, symbol_table->symbols[i].name, symbol_table->symbols[i].value);
@@ -68,7 +68,7 @@ double env_evaluate(Node *node, SymbolTable *symbol_table) {
             return node->as.number;
 
         case NODE_IDENTIFIER: {
-            Symbol *symbol = get_symbol(symbol_table, node->as.identifier.name, node->as.identifier.length);
+            Symbol *symbol = symbol_table_get(symbol_table, node->as.identifier.name, node->as.identifier.length);
             if (symbol) return symbol->value;
 
             fprintf(stderr, "Error: Undefined variable '%.*s'\n", node->as.identifier.length, node->as.identifier.name);
@@ -88,7 +88,7 @@ double env_evaluate(Node *node, SymbolTable *symbol_table) {
         case NODE_BINARY: {
             if (node->as.binary.op.type == TOK_EQUAL) {
                 double value = env_evaluate(node->as.binary.right, symbol_table);
-                set_symbol(symbol_table, node->as.binary.left->as.identifier.name, node->as.binary.left->as.identifier.length, value);
+                symbol_table_set(symbol_table, node->as.binary.left->as.identifier.name, node->as.binary.left->as.identifier.length, value);
 
                 return value;
             }
