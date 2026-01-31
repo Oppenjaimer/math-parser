@@ -11,6 +11,18 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -I$(INC_DIR)
 LDLIBS = -lm
 
+ifeq ($(DEBUG), 1)
+    CFLAGS += -O0 -g
+    BUILD_DIR = build/debug
+    LIB_DIR = lib/debug
+    BIN_DIR = bin/debug
+else
+    CFLAGS += -O3 -march=native -flto
+    BUILD_DIR = build/release
+    LIB_DIR = lib/release
+    BIN_DIR = bin/release
+endif
+
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
 MAIN_SRC = $(SRC_DIR)/main.c
 LIB_SRCS = $(filter-out $(MAIN_SRC), $(SRC_FILES))
