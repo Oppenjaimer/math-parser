@@ -28,7 +28,7 @@ void parse(Parser *parser, const char *expr, bool show_tree, SymbolTable *symbol
     }
 
     double result = env_evaluate(root, symbol_table);
-    if (!isnan(result)) printf("%lf\n", result);
+    printf("%lf\n", result);
 }
 
 int main(int argc, char **argv) {

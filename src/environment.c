@@ -7,6 +7,36 @@
 
 #define SYMBOL_ARENA_CAPACITY (1024 * 2)
 
+static double custom_pow(double a, double b) {
+    if (a == 0.0) {
+        if (b == 0.0) return 1.0;
+        if (b < 0.0) return INFINITY;
+        return 0.0;
+    }
+
+    if (a > 0.0) return pow(a, b);
+
+    double int_part;
+    if (modf(b, &int_part) == 0.0) {
+        double res = pow(-a, b);
+        return (fmod(int_part, 2.0) != 0.0) ? -res : res;
+    }
+
+    for (int q = 1; q < 1000000; q++) {
+        double p = b * q;
+        if (fabs(p - round(p)) < 1e-9) {
+            int p_int = (int)round(p);
+            if (q % 2 != 0) {
+                double res = pow(fabs(a), b);
+                return (p_int % 2 != 0) ? -res : res;
+            }
+            break;
+        }
+    }
+
+    return NAN;
+}
+
 SymbolTable symbol_table_init() {
     SymbolTable table;
     table.count = 0;
@@ -106,7 +136,7 @@ double env_evaluate(Node *node, SymbolTable *symbol_table) {
                         return NAN;
                     }
                     return left / right;
-                case TOK_CARET: return pow(left, right);
+                case TOK_CARET: return custom_pow(left, right);
                 default: return 0.0;
             }
         }
