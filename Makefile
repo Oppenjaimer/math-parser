@@ -9,7 +9,7 @@ LIB_TARGET = $(LIB_DIR)/libmathparser.a
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -I$(INC_DIR)
-LDLIBS = -lm
+LDFLAGS = -L$(LIB_DIR) -lmathparser -lm
 
 ifeq ($(DEBUG), 1)
     CFLAGS += -O0 -g
@@ -33,7 +33,7 @@ LIB_OBJS = $(LIB_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 all: $(LIB_TARGET) $(EXEC_TARGET)
 
 $(EXEC_TARGET): $(MAIN_OBJ) $(LIB_TARGET) | $(BIN_DIR)
-	$(CC) $(MAIN_OBJ) -L$(LIB_DIR) -lmathparser $(LDLIBS) -o $@
+	$(CC) $(MAIN_OBJ) $(LDFLAGS) -o $@
 
 $(LIB_TARGET): $(LIB_OBJS) | $(LIB_DIR)
 	ar rcs $@ $^
