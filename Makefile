@@ -4,7 +4,7 @@ BUILD_DIR = build
 BIN_DIR = bin
 LIB_DIR = lib
 
-EXEC_TARGET = $(BIN_DIR)/main
+EXEC_TARGET = $(BIN_DIR)/parser
 LIB_TARGET = $(LIB_DIR)/libmathparser.a
 
 CC = gcc
